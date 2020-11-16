@@ -6,10 +6,18 @@ variable "key_name" {
   description = "Desired name of AWS key pair"
 }
 
-variable "dgserv_instance_type" {
-  description = "The instance type to use for dgserv"
+variable "instance_type_lb" {
+  description = "The instance type to use for the auxcord-lb instance"
 }
 
+variable "instance_type_db" {
+  description = "The instance type to use for the auxcord-db instance"
+}
+
+
+variable "instance_type_app" {
+  description = "The instance type to use for the auxcord-app instance"
+}
 variable "eip_allocation_id" {
   description = "EIP Allocation ID for a pre-existing elastic ip to use"
 }

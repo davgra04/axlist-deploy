@@ -3,6 +3,11 @@ provider "aws" {
   region = "us-west-2"
 }
 
+resource "aws_key_pair" "auth" {
+  key_name   = var.key_name
+  public_key = file(var.public_key_path)
+}
+
 ####################################################################################################
 ##  INFRA (vpc, internet gateway, route table, subnet, security group)
 ####################################################################################################
@@ -36,11 +41,11 @@ resource "aws_subnet" "auxcord-subnet" {
   availability_zone       = "us-west-2a"
 }
 
-# Our default security group to access
-# the instances over SSH and HTTP
-resource "aws_security_group" "auxcord-sg" {
-  name        = "auxcord-sg"
-  description = "Main security group for auxcord"
+# The default security group to grant outbound Internet access and SSH from a
+# single IP
+resource "aws_security_group" "auxcord-default-sg" {
+  name        = "auxcord-default-sg"
+  description = "Default security group for auxcord"
   vpc_id      = aws_vpc.auxcord-vpc.id
 
   # SSH access from my IP
@@ -49,24 +54,6 @@ resource "aws_security_group" "auxcord-sg" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["${var.my_ip}/32"]
-  }
-
-  # HTTP access from my IP
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    # cidr_blocks = [var.my_ip]
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # HTTPS access from my IP
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    # cidr_blocks = [var.my_ip]
-    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # outbound internet access
@@ -78,18 +65,36 @@ resource "aws_security_group" "auxcord-sg" {
   }
 }
 
+# Security group which grants HTTP(S) access
+resource "aws_security_group" "auxcord-http-sg" {
+  name        = "auxcord-http-sg"
+  description = "HTTP(S) security group for auxcord"
+  vpc_id      = aws_vpc.auxcord-vpc.id
+
+  # HTTP access from my IP
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS access from my IP
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 
 ####################################################################################################
 ##  EC2
 ####################################################################################################
 
-resource "aws_key_pair" "auth" {
-  key_name   = var.key_name
-  public_key = file(var.public_key_path)
-}
-
-resource "aws_instance" "auxcord-web" {
-
+# nginx load balancer instance
+resource "aws_instance" "auxcord-lb" {
   connection {
     # type        = "ssh"
     user        = "centos"
@@ -98,25 +103,83 @@ resource "aws_instance" "auxcord-web" {
   }
 
   root_block_device {
-    volume_size = 64
+    volume_size = 32
   }
 
-  instance_type = var.dgserv_instance_type
-
+  instance_type = var.instance_type_lb
   ami = lookup(var.aws_amis, var.aws_region)
-
   key_name = aws_key_pair.auth.id
-
-  vpc_security_group_ids = [aws_security_group.auxcord-sg.id]
-
   subnet_id = aws_subnet.auxcord-subnet.id
 
+  vpc_security_group_ids = [
+    aws_security_group.auxcord-default-sg.id,
+    aws_security_group.auxcord-http-sg.id,
+  ]
+
   tags = {
-    Name = "auxcord"
+    Name = "auxcord-lb",
+    Project = "auxcord"
   }
 }
 
+# elastic IP association for auxcord-lb
 resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.auxcord-web.id
+  instance_id   = aws_instance.auxcord-lb.id
   allocation_id = var.eip_allocation_id
+}
+
+# db instance
+resource "aws_instance" "auxcord-db" {
+  connection {
+    # type        = "ssh"
+    user        = "centos"
+    host        = self.public_ip
+    private_key = file(var.private_key_path)
+  }
+
+  root_block_device {
+    volume_size = 32
+  }
+
+  instance_type = var.instance_type_db
+  ami = lookup(var.aws_amis, var.aws_region)
+  key_name = aws_key_pair.auth.id
+  subnet_id = aws_subnet.auxcord-subnet.id
+
+  vpc_security_group_ids = [
+    aws_security_group.auxcord-default-sg.id,
+  ]
+
+  tags = {
+    Name = "auxcord-db",
+    Project = "auxcord"
+  }
+}
+
+# auxcord app instance
+resource "aws_instance" "auxcord-app" {
+  connection {
+    # type        = "ssh"
+    user        = "centos"
+    host        = self.public_ip
+    private_key = file(var.private_key_path)
+  }
+
+  root_block_device {
+    volume_size = 32
+  }
+
+  instance_type = var.instance_type_app
+  ami = lookup(var.aws_amis, var.aws_region)
+  key_name = aws_key_pair.auth.id
+  subnet_id = aws_subnet.auxcord-subnet.id
+
+  vpc_security_group_ids = [
+    aws_security_group.auxcord-default-sg.id,
+  ]
+
+  tags = {
+    Name = "auxcord-app",
+    Project = "auxcord"
+  }
 }
