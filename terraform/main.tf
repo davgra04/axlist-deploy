@@ -9,44 +9,48 @@ resource "aws_key_pair" "auth" {
 }
 
 ####################################################################################################
-##  INFRA (vpc, internet gateway, route table, subnet, security group)
+##  INFRA (vpc, internet gateway, route table, subnet)
 ####################################################################################################
 
 # Create a VPC to launch our instances into
-resource "aws_vpc" "auxcord-vpc" {
+resource "aws_vpc" "axlist-vpc" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
-      Name = "auxcord-VPC"
+      Name = "axlist-VPC"
   }
 }
 
 # Create an internet gateway to give our subnet access to the outside world
-resource "aws_internet_gateway" "auxcord-ig" {
-  vpc_id = aws_vpc.auxcord-vpc.id
+resource "aws_internet_gateway" "axlist-ig" {
+  vpc_id = aws_vpc.axlist-vpc.id
 }
 
 # Grant the VPC internet access on its main route table
 resource "aws_route" "internet_access" {
-  route_table_id         = aws_vpc.auxcord-vpc.main_route_table_id
+  route_table_id         = aws_vpc.axlist-vpc.main_route_table_id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.auxcord-ig.id
+  gateway_id             = aws_internet_gateway.axlist-ig.id
 }
 
 # Create a subnet to launch our instances into
-resource "aws_subnet" "auxcord-subnet" {
-  vpc_id                  = aws_vpc.auxcord-vpc.id
+resource "aws_subnet" "axlist-subnet" {
+  vpc_id                  = aws_vpc.axlist-vpc.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
   availability_zone       = "us-west-2a"
 }
 
+####################################################################################################
+##  SECURITY GROUPS
+####################################################################################################
+
 # The default security group to grant outbound Internet access and SSH from a
 # single IP
-resource "aws_security_group" "auxcord-default-sg" {
-  name        = "auxcord-default-sg"
-  description = "Default security group for auxcord"
-  vpc_id      = aws_vpc.auxcord-vpc.id
+resource "aws_security_group" "axlist-default-sg" {
+  name        = "axlist-default-sg"
+  description = "Default security group for axlist"
+  vpc_id      = aws_vpc.axlist-vpc.id
 
   # SSH access from my IP
   ingress {
@@ -66,10 +70,10 @@ resource "aws_security_group" "auxcord-default-sg" {
 }
 
 # Security group which grants HTTP(S) access
-resource "aws_security_group" "auxcord-http-sg" {
-  name        = "auxcord-http-sg"
-  description = "HTTP(S) security group for auxcord"
-  vpc_id      = aws_vpc.auxcord-vpc.id
+resource "aws_security_group" "axlist-http-sg" {
+  name        = "axlist-http-sg"
+  description = "HTTP(S) security group for axlist"
+  vpc_id      = aws_vpc.axlist-vpc.id
 
   # HTTP access from my IP
   ingress {
@@ -88,13 +92,28 @@ resource "aws_security_group" "auxcord-http-sg" {
   }
 }
 
+# Security group which grants DB admin access to my IP
+resource "aws_security_group" "axlist-db-sg" {
+  name        = "axlist-db-sg"
+  description = "DB security group for axlist"
+  vpc_id      = aws_vpc.axlist-vpc.id
+
+  # DB access from my IP
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["${var.my_ip}/32"]
+  }
+}
+
 
 ####################################################################################################
 ##  EC2
 ####################################################################################################
 
 # nginx load balancer instance
-resource "aws_instance" "auxcord-lb" {
+resource "aws_instance" "axlist-lb" {
   connection {
     # type        = "ssh"
     user        = "centos"
@@ -109,27 +128,27 @@ resource "aws_instance" "auxcord-lb" {
   instance_type = var.instance_type_lb
   ami = lookup(var.aws_amis, var.aws_region)
   key_name = aws_key_pair.auth.id
-  subnet_id = aws_subnet.auxcord-subnet.id
+  subnet_id = aws_subnet.axlist-subnet.id
 
   vpc_security_group_ids = [
-    aws_security_group.auxcord-default-sg.id,
-    aws_security_group.auxcord-http-sg.id,
+    aws_security_group.axlist-default-sg.id,
+    aws_security_group.axlist-http-sg.id,
   ]
 
   tags = {
-    Name = "auxcord-lb",
-    Project = "auxcord"
+    Name = "axlist-lb",
+    Project = "axlist"
   }
 }
 
-# elastic IP association for auxcord-lb
+# elastic IP association for axlist-lb
 resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.auxcord-lb.id
+  instance_id   = aws_instance.axlist-lb.id
   allocation_id = var.eip_allocation_id
 }
 
 # db instance
-resource "aws_instance" "auxcord-db" {
+resource "aws_instance" "axlist-db" {
   connection {
     # type        = "ssh"
     user        = "centos"
@@ -144,20 +163,21 @@ resource "aws_instance" "auxcord-db" {
   instance_type = var.instance_type_db
   ami = lookup(var.aws_amis, var.aws_region)
   key_name = aws_key_pair.auth.id
-  subnet_id = aws_subnet.auxcord-subnet.id
+  subnet_id = aws_subnet.axlist-subnet.id
 
   vpc_security_group_ids = [
-    aws_security_group.auxcord-default-sg.id,
+    aws_security_group.axlist-default-sg.id,
+    aws_security_group.axlist-db-sg.id,
   ]
 
   tags = {
-    Name = "auxcord-db",
-    Project = "auxcord"
+    Name = "axlist-db",
+    Project = "axlist"
   }
 }
 
-# auxcord app instance
-resource "aws_instance" "auxcord-app" {
+# axlist app instance
+resource "aws_instance" "axlist-app" {
   connection {
     # type        = "ssh"
     user        = "centos"
@@ -172,14 +192,14 @@ resource "aws_instance" "auxcord-app" {
   instance_type = var.instance_type_app
   ami = lookup(var.aws_amis, var.aws_region)
   key_name = aws_key_pair.auth.id
-  subnet_id = aws_subnet.auxcord-subnet.id
+  subnet_id = aws_subnet.axlist-subnet.id
 
   vpc_security_group_ids = [
-    aws_security_group.auxcord-default-sg.id,
+    aws_security_group.axlist-default-sg.id,
   ]
 
   tags = {
-    Name = "auxcord-app",
-    Project = "auxcord"
+    Name = "axlist-app",
+    Project = "axlist"
   }
 }
