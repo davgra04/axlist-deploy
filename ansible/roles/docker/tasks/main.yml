@@ -1,0 +1,43 @@
+---
+
+- name: check for docker-ce.repo file
+  stat:
+    path: /etc/yum.repos.d/docker-ce.repo
+  register: docker_repo_stat_result
+
+- name: add Docker-CE repository if not present
+  command: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+# - name: add Docker-CE repository
+#   yum_repository:
+#     name: docker-ce
+#     description: Docker Community Edition repo
+#     baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+    
+
+- name: update yum cache and install docker packages
+  yum:
+    name: [ docker-ce, docker-ce-cli, containerd.io, docker-compose ]
+    state: latest
+    update_cache: yes
+
+- name: start docker
+  service:
+    name: docker
+    state: started
+
+- name: create docker group
+  group:
+    name: docker
+    state: present
+
+- name: add centos user to docker group
+  user:
+    name: centos
+    group: docker
+
+- name: create directory for docker volumes
+  file:
+    path: /home/centos/docker-volumes
+    state: directory
+    mode: "0755"
