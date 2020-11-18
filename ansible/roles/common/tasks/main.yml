@@ -1,18 +1,21 @@
 ---
 - name: install epel repo
-  yum:
+  dnf:
     name: epel-release
     state: present
 
-- name: update yum cache and upgrade all packages
-  yum:
+- name: update dnf cache and upgrade all packages
+  dnf:
     name: "*"
     state: latest
     update_cache: yes
 
-- name: install common utilities (vim, tree, lsof, etc)
-  yum:
-    name: [ vim, tree, lsof ]
+- name: install python3 devel, pip, tools, and libs packages
+  dnf:
+    name: [ python3-devel, python3-pip, python3-tools, python3-libs ]
     state: latest
 
-- include: ntp.yml
+- name: install common utilities (vim, tree, lsof, etc)
+  dnf:
+    name: [ vim, tree, lsof ]
+    state: latest

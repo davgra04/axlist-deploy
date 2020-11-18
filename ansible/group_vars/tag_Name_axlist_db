@@ -1,0 +1,5 @@
+---
+# variables here are applicable to db host groups
+
+pgsqlDataDir: /var/lib/pgsql/13/data/
+axlistDBUserPassword: axlist

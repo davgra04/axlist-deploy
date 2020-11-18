@@ -2,3 +2,5 @@
 # variables here are applicable to all host groups
 
 ntpserver: time.google.com
+myIP: 98.201.233.135
+pip3Path: /usr/bin/pip3

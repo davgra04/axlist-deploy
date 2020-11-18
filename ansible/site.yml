@@ -1,5 +1,13 @@
 ---
-- name: apply common configuration to auxcord host
+- name: bootstrap hosts to use python3 and dnf
+  hosts: all
+  become: yes
+  gather_facts: false
+
+  roles:
+  - bootstrap
+
+- name: apply common configuration to axlist host
   hosts: all
   become: yes
 
@@ -7,21 +15,21 @@
   - common
 
 - name: apply nginx configuration to loadbalancer host
-  hosts: tag_Name_auxcord_lb
+  hosts: tag_Name_axlist_lb
   become: yes
 
   roles:
   - loadbalancer
 
 - name: apply db configuration to db host
-  hosts: tag_Name_auxcord_db
+  hosts: tag_Name_axlist_db
   become: yes
 
   roles:
   - database
 
 - name: apply app configuration to app host
-  hosts: tag_Name_auxcord_app
+  hosts: tag_Name_axlist_app
   become: yes
 
   roles:

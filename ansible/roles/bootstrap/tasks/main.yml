@@ -1,0 +1,11 @@
+---
+# tasks file for bootstrapping python 3
+- name: check for python3
+  raw: test -e /usr/bin/python3
+  changed_when: false
+  failed_when: false
+  register: check_python
+
+- name: install python3
+  raw: yum -y install python3
+  when: check_python.rc != 0

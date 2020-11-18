@@ -1,0 +1,56 @@
+---
+- name: install psycopg2-binary pip package
+  pip:
+    name: psycopg2-binary
+    executable: "{{ pip3Path }}"
+  environment:
+    PATH: "$PATH:/usr/pgsql-13/bin"
+
+- name: check if postgres data dir is populated
+  find:
+    paths:
+      - "{{ pgsqlDataDir }}"
+  register: dataDirFilesFound
+
+- name: init postgres db
+  shell:
+    cmd: /usr/pgsql-13/bin/postgresql-13-setup initdb
+  when: dataDirFilesFound.matched == 0
+
+- name: enable and start postgres service
+  service:
+    name: postgresql-13
+    state: started
+    enabled: yes
+
+- name: update postgresql.conf listen_addresses to listen on all
+  lineinfile:
+    path: /var/lib/pgsql/13/data/postgresql.conf
+    regexp: "^#listen_addresses = 'localhost'"
+    line: "listen_addresses = '*'    # what IP address(es) to listen on;"
+  notify: restart postgres
+
+- name: create axlist database
+  become_user: postgres
+  community.general.postgresql_db:
+    name: axlist
+
+- name: create axlist user
+  become_user: postgres
+  community.general.postgresql_user:
+    db: axlist
+    name: axlist
+    password: "{{ axlistDBUserPassword }}"
+    priv: "CONNECT/ALL"
+    comment: This is the main axlist user
+
+- name: Grant postgres user access to database from my IP.
+  become_user: postgres
+  community.general.postgresql_pg_hba:
+    dest: /var/lib/pgsql/13/data/pg_hba.conf
+    contype: host
+    users: axlist
+    source: "{{ myIP }}/32"
+    databases: axlist
+    method: trust
+  notify: restart postgres

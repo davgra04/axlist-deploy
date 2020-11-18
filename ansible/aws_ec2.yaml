@@ -12,7 +12,7 @@ hostnames:
   - tag:Name
 
 filters:
-  tag:Project: auxcord
+  tag:Project: axlist
 
 keyed_groups:
   - key: tags
@@ -23,4 +23,5 @@ keyed_groups:
     prefix: aws_region
 
 all:
-  ansible_ssh_private_key_file: ~/.ssh/20201113_auxcord-python-server.key
+  ansible_ssh_private_key_file: ~/.ssh/20201113_axlist-python-server.key
+  # ansible_python_interpreter: /usr/bin/python3

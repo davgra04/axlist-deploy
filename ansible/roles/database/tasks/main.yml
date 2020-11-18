@@ -1,33 +1,6 @@
 ---
 # tasks file for database
-- name: check that postgres* is excluded for CentOS-Base.repo
-  shell:
-    cmd: grep "exclude=postgres\*" /etc/yum.repos.d/CentOS-Base.repo
-  register: postgres_exclude_result
-  ignore_errors: yes
-  changed_when: False
 
-- name: add postgres* exclusion
-  shell:
-    cmd: echo "exclude=postgres*" >> /etc/yum.repos.d/CentOS-Base.repo
-  when: postgres_exclude_result.rc != 0
+- include: postgres_install.yml
 
-- name: install postgres repo
-  yum:
-    name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-    state: latest
-
-- name: install postgres
-  yum:
-    name: postgresql13-server
-    state: latest
-
-- name: init postgres db
-  shell:
-    cmd: /usr/pgsql-13/bin/postgresql-13-setup initdb
-
-- name: enable and start postgres service
-  service:
-    name: postgresql-13
-    state: started
-    enabled: yes
+- include: postgres_config.yml

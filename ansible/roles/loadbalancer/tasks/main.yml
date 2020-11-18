@@ -1,6 +1,6 @@
 ---
 # tasks file for loadbalancer
 - name: install nginx
-  yum:
-    name: "nginx"
+  dnf:
+    name: nginx
     state: latest

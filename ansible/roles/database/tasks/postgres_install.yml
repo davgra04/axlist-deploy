@@ -1,0 +1,31 @@
+---
+# - name: check that postgres* is excluded for CentOS-Base.repo
+#   shell:
+#     cmd: grep "exclude=postgres\*" /etc/yum.repos.d/CentOS-Base.repo
+#   register: postgres_exclude_result
+#   ignore_errors: yes
+#   changed_when: False
+
+# - name: add postgres* exclusion
+#   shell:
+#     cmd: echo "exclude=postgres*" >> /etc/yum.repos.d/CentOS-Base.repo
+#   when: postgres_exclude_result.rc != 0
+
+- name: install postgres repo
+  dnf:
+    name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    disable_gpg_check: yes
+    state: latest
+
+- name: disable the built-in PostgreSQL module
+  command: 
+    cmd: dnf -y module disable postgresql
+    warn: false
+  register: disablePostgresModuleResult
+  changed_when:
+  - '"Disabling modules" in disablePostgresModuleResult.stdout'
+
+- name: install postgres
+  dnf:
+    name: postgresql13-server
+    state: latest
