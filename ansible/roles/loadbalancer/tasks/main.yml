@@ -1,6 +1,37 @@
 ---
 # tasks file for loadbalancer
+
 - name: install nginx
   dnf:
     name: nginx
     state: latest
+
+- name: enable and start nginx service
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: overwrite default nginx.conf
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+
+- name: install cerbot
+  dnf:
+    name: python3-certbot-nginx
+    state: latest
+
+- name: check if Let's Encrypt Certificates exist
+  stat:
+    path: /etc/letsencrypt/live/dgraves.dev
+  register: statCertResult
+
+- name: use certbot to obtain Let's Encrypt Certificates
+  command:
+    cmd: certbot --nginx -m davgra04@gmail.com --agree-tos -d "dgraves.dev,www.dgraves.dev"
+  when: 'statCertResult.stat.exists == 0'

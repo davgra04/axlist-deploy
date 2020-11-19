@@ -92,6 +92,21 @@ resource "aws_security_group" "axlist-http-sg" {
   }
 }
 
+# Security group which grants 8080 access for testing
+resource "aws_security_group" "axlist-testhttp-sg" {
+  name        = "axlist-testhttp-sg"
+  description = "HTTP(S) security group for axlist"
+  vpc_id      = aws_vpc.axlist-vpc.id
+
+  # HTTP access from my IP
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["${var.my_ip}/32"]
+  }
+}
+
 # Security group which grants DB admin access to my IP
 resource "aws_security_group" "axlist-db-sg" {
   name        = "axlist-db-sg"
@@ -107,44 +122,60 @@ resource "aws_security_group" "axlist-db-sg" {
   }
 }
 
+# Security group which grants access between all instances
+resource "aws_security_group" "axlist-internal-sg" {
+  name        = "axlist-internal-sg"
+  description = "Internal security group for axlist"
+  vpc_id      = aws_vpc.axlist-vpc.id
+
+  # DB access from my IP
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = -1
+    security_groups = [aws_security_group.axlist-default-sg.id]
+  }
+}
+
 
 ####################################################################################################
 ##  EC2
 ####################################################################################################
 
-# # nginx load balancer instance
-# resource "aws_instance" "axlist-lb" {
-#   connection {
-#     # type        = "ssh"
-#     user        = "centos"
-#     host        = self.public_ip
-#     private_key = file(var.private_key_path)
-#   }
+# nginx load balancer instance
+resource "aws_instance" "axlist-lb" {
+  connection {
+    # type        = "ssh"
+    user        = "centos"
+    host        = self.public_ip
+    private_key = file(var.private_key_path)
+  }
 
-#   root_block_device {
-#     volume_size = 32
-#   }
+  root_block_device {
+    volume_size = 32
+  }
 
-#   instance_type = var.instance_type_lb
-#   ami = lookup(var.aws_amis, var.aws_region)
-#   key_name = aws_key_pair.auth.id
-#   subnet_id = aws_subnet.axlist-subnet.id
+  instance_type = var.instance_type_lb
+  ami = lookup(var.aws_amis, var.aws_region)
+  key_name = aws_key_pair.auth.id
+  subnet_id = aws_subnet.axlist-subnet.id
 
-#   vpc_security_group_ids = [
-#     aws_security_group.axlist-default-sg.id,
-#     aws_security_group.axlist-http-sg.id,
-#   ]
+  vpc_security_group_ids = [
+    aws_security_group.axlist-default-sg.id,
+    aws_security_group.axlist-internal-sg.id,
+    aws_security_group.axlist-http-sg.id,
+  ]
 
-#   tags = {
-#     Name = "axlist-lb",
-#     Project = "axlist"
-#   }
-# }
+  tags = {
+    Name = "axlist-lb",
+    Project = "axlist"
+  }
+}
 
 # elastic IP association for axlist-lb
 resource "aws_eip_association" "eip_assoc" {
   # instance_id   = aws_instance.axlist-lb.id
-  instance_id   = aws_instance.axlist-app.id
+  instance_id   = aws_instance.axlist-lb.id
   allocation_id = var.eip_allocation_id
 }
 
@@ -168,6 +199,7 @@ resource "aws_instance" "axlist-db" {
 
   vpc_security_group_ids = [
     aws_security_group.axlist-default-sg.id,
+    aws_security_group.axlist-internal-sg.id,
     aws_security_group.axlist-db-sg.id,
   ]
 
@@ -197,7 +229,8 @@ resource "aws_instance" "axlist-app" {
 
   vpc_security_group_ids = [
     aws_security_group.axlist-default-sg.id,
-    aws_security_group.axlist-http-sg.id,
+    aws_security_group.axlist-internal-sg.id,
+    aws_security_group.axlist-testhttp-sg.id,
   ]
 
   tags = {

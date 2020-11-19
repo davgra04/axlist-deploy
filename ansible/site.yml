@@ -14,13 +14,6 @@
   roles:
   - common
 
-- name: apply nginx configuration to loadbalancer host
-  hosts: tag_Name_axlist_lb
-  become: yes
-
-  roles:
-  - loadbalancer
-
 - name: apply db configuration to db host
   hosts: tag_Name_axlist_db
   become: yes
@@ -30,7 +23,13 @@
 
 - name: apply app configuration to app host
   hosts: tag_Name_axlist_app
-  become: yes
 
   roles:
   - app
+
+- name: apply nginx configuration to loadbalancer host
+  hosts: tag_Name_axlist_lb
+  become: yes
+
+  roles:
+  - loadbalancer

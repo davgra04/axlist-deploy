@@ -1,2 +1,56 @@
 ---
 # tasks file for app
+- name: check for virtualenv dir
+  stat:
+    path: /home/centos/env
+  register: venvStatResult
+
+- name: create virtualenv dir if necessary
+  command:
+    cmd: python3 -m venv /home/centos/env
+  when: 'venvStatResult.stat.exists == 0'
+
+- name: install git
+  become: yes
+  dnf:
+    name: git
+    state: latest
+
+- name: clone axlist-app repo
+  git:
+    repo: https://github.com/davgra04/axlist-app
+    dest: /home/centos/axlist-app
+
+- name: install axlist-app dependencies
+  pip:
+    requirements: /home/centos/axlist-app/requirements.txt
+    virtualenv: /home/centos/env
+
+- name: install gunicorn
+  pip:
+    name: gunicorn
+    virtualenv: /home/centos/env
+
+- name: install axlist systemd service file
+  become: yes
+  template:
+    src: axlist-app.service.j2
+    dest: /etc/systemd/system/axlist-app.service
+    owner: centos
+    group: centos
+    mode: '0644'
+
+- name: fetch systemd service file test
+  fetch:
+    src: /etc/systemd/system/axlist-app.service
+    dest: "axlist_dump/{{inventory_hostname}}"
+
+- name: Enable and start axlist service
+  become: yes
+  service:
+    name: axlist-app
+    state: started
+    enabled: yes
+
+# start app
+

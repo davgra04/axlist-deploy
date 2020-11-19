@@ -1,0 +1,29 @@
+[Unit]
+Description=AxList gunicorn daemon
+After=network.target
+
+[Service]
+Type=notify
+# the specific user that our service will run as
+User=centos
+Group=centos
+
+# TODO figure out where this dir is
+RuntimeDirectory=gunicorn
+WorkingDirectory=/home/centos/axlist-app
+
+ExecStart=/home/centos/env/bin/gunicorn -w 4 --forwarded-allow-ips="{{ hostvars['axlist-lb']['private_ip_address'] }}" -b 0.0.0.0:8080 axlist:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+# attempting to get stdout/stderr
+StandardOutput=journal+console
+StandardError=journal+console
+
+# should allow port < 1024 but I can't seem to get it sorted out
+# AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

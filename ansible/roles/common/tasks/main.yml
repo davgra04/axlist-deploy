@@ -1,4 +1,9 @@
 ---
+- name: (TEMPORARY) set SELinux to permissive to avoid headache
+  become: yes
+  command:
+    cmd: setenforce 0
+    
 - name: install epel repo
   dnf:
     name: epel-release
@@ -19,3 +24,23 @@
   dnf:
     name: [ vim, tree, lsof ]
     state: latest
+
+- name: dump ansible hostvars
+  template:
+    src: templates/dump_hostvars.j2
+    dest: /tmp/ansible_hostvars.json
+
+- name: fetch ansible hostvars
+  fetch:
+    src: /tmp/ansible_hostvars.json
+    dest: "axlist_dump/{{inventory_hostname}}"
+
+- name: dump ansible playbook vars
+  template:
+    src: templates/dump_playbook_vars.j2
+    dest: /tmp/ansible_playbook_vars.json
+
+- name: fetch ansible playbook vars
+  fetch:
+    src: /tmp/ansible_playbook_vars.json
+    dest: "axlist_dump/{{inventory_hostname}}"
