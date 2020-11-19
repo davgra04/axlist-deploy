@@ -1,20 +1,13 @@
 axlist-deploy
 =============
 
-The repository of deployment resources for axlist-app. This repo uses the following for deployment:
+The repository of deployment resources for [axlist-app](https://github.com/davgra04/axlist-app). This repo uses the following for deployment:
 
 * Amazon Web Services
 * Terraform
 * Ansible
 * Docker
 
-
-## The Plan
-
-* Manually create an elastic IP that can persist between deployments
-* Use Terraform to bring up a dgserv3-like EC2 instance
-* Use Ansible to provision the instance
-* Push axlist-python to server as a docker container behind Traefik
 
 # Deploying
 
@@ -28,9 +21,9 @@ The repository of deployment resources for axlist-app. This repo uses the follow
    ```bash
    ssh-keygen -t rsa -C this-is-my-server-key -f ~/.ssh/whatever.key
    ```
-4. Configure Terraform Vars
+4. Configure Terraform vars file
    ```bash
-   # deployment_20191031.tfvars
+   # deployment.tfvars
 
    eip_allocation_id = "eipalloc-d3adb33fd3adb33f"     # elastic ip to associate instance with
    my_ip = "8.8.8.8"                                   # IP to whitelist for SSH
@@ -51,7 +44,7 @@ The repository of deployment resources for axlist-app. This repo uses the follow
 
    # init and launch using .tfvars file
    terraform init
-   terraform apply -var-file="deployment_20191031.tfvars" --auto-approve
+   terraform apply -var-file="deployment.tfvars" --auto-approve
    ```
 
 ## Provision instances using Ansible
@@ -69,4 +62,8 @@ The repository of deployment resources for axlist-app. This repo uses the follow
 3. (Optional) Ping instances to check connectivity
    ```bash
    ansible -i aws_ec2.yaml all -m ping
+   ```
+4. Run main playbook
+   ```bash
+   ansible-playbook -i aws_ec2.yaml site.yml
    ```
