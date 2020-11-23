@@ -2,4 +2,5 @@
 # variables here are applicable to app host groups
 
 github_user: davgra04
-github_proejct: axlist-app
+github_project: axlist-app
+axlist_version: implement_debug

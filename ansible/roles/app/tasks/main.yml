@@ -20,6 +20,8 @@
   git:
     repo: https://github.com/davgra04/axlist-app
     dest: /home/centos/axlist-app
+    version: "{{ axlist_version }}"
+  notify: restart axlist
 
 - name: install axlist-app dependencies
   pip:

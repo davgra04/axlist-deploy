@@ -33,5 +33,5 @@
 
 - name: use certbot to obtain Let's Encrypt Certificates
   command:
-    cmd: certbot --nginx -m davgra04@gmail.com --agree-tos -d "dgraves.dev,www.dgraves.dev"
-  when: 'statCertResult.stat.exists == 0'
+    cmd: certbot --nginx -m davgra04@gmail.com --agree-tos -d "dgraves.dev,www.dgraves.dev" --reinstall
+  # when: 'statCertResult.stat.exists == 0'
