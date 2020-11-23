@@ -1,6 +1,9 @@
 ---
 # variables here are applicable to app host groups
 
-github_user: davgra04
-github_project: axlist-app
-axlist_version: implement_debug
+venvPath: /home/centos/env
+githubUser: davgra04
+githubProject: axlist-app
+axlistVersion: master
+flaskApp: axlist
+flaskEnv: production

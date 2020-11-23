@@ -2,12 +2,12 @@
 # tasks file for app
 - name: check for virtualenv dir
   stat:
-    path: /home/centos/env
+    path: "{{ venvPath }}"
   register: venvStatResult
 
 - name: create virtualenv dir if necessary
   command:
-    cmd: python3 -m venv /home/centos/env
+    cmd: "python3 -m venv {{ venvPath }}"
   when: 'venvStatResult.stat.exists == 0'
 
 - name: install git
@@ -18,20 +18,19 @@
 
 - name: clone axlist-app repo
   git:
-    repo: https://github.com/davgra04/axlist-app
+    repo: "https://github.com/{{ githubUser }}/{{ githubProject }}"
     dest: /home/centos/axlist-app
-    version: "{{ axlist_version }}"
-  notify: restart axlist
+    version: "{{ axlistVersion }}"
 
 - name: install axlist-app dependencies
   pip:
     requirements: /home/centos/axlist-app/requirements.txt
-    virtualenv: /home/centos/env
+    virtualenv: "{{ venvPath }}"
 
 - name: install gunicorn
   pip:
     name: gunicorn
-    virtualenv: /home/centos/env
+    virtualenv: "{{ venvPath }}"
 
 - name: install axlist systemd service file
   become: yes
@@ -47,12 +46,14 @@
     src: /etc/systemd/system/axlist-app.service
     dest: "axlist_dump/{{inventory_hostname}}"
 
+- name: initialize axlist database
+  shell:
+    cmd: "FLASK_APP={{ flaskApp }} FLASK_ENV={{ flaskEnv }} {{ venvPath }}/bin/flask init-db"
+    chdir: /home/centos/axlist-app
+
 - name: Enable and start axlist service
   become: yes
   service:
     name: axlist-app
     state: started
     enabled: yes
-
-# start app
-

@@ -8,4 +8,5 @@
 
 - name: install python3
   raw: yum -y install python3
+  become: yes
   when: check_python.rc != 0

@@ -21,7 +21,7 @@
     mode: '0644'
   notify: restart nginx
 
-- name: install cerbot
+- name: install certbot
   dnf:
     name: python3-certbot-nginx
     state: latest
@@ -33,5 +33,5 @@
 
 - name: use certbot to obtain Let's Encrypt Certificates
   command:
-    cmd: certbot --nginx -m davgra04@gmail.com --agree-tos -d "dgraves.dev,www.dgraves.dev" --reinstall
+    cmd: certbot --nginx -m {{ SSLCertEmail }} --agree-tos -d "{{ SSLCertDomains }}" --reinstall
   # when: 'statCertResult.stat.exists == 0'

@@ -1,0 +1,5 @@
+---
+# variables here are applicable to lb host groups
+
+SSLCertEmail: davgra04@gmail.com
+SSLCertDomains: dgraves.dev,www.dgraves.dev

@@ -1,13 +1,21 @@
 axlist-deploy
 =============
 
-The repository of deployment resources for [axlist-app](https://github.com/davgra04/axlist-app), intended as a learning exercise for using Ansible. This repo uses the following for deployment:
-
-* Amazon Web Services
-* Terraform
-* Ansible
+The repository of deployment resources for [axlist-app](https://github.com/davgra04/axlist-app), intended as a learning exercise for using Ansible.
 
 ![](./docs/axlist-aws-diagram.png)
+
+The deployment consists of 3 EC2 instances running CentOS 8:
+
+* The Load Balancer - Nginx configured as a reverse proxy
+* The Application - [axlist-app](https://github.com/davgra04/axlist-app) served by Gunicorn
+* The Database - Basic PostgreSQL server
+
+# Requirements
+
+* An Amazon Web Services account to deploy to
+* Terraform
+* Ansible
 
 # Deploying
 

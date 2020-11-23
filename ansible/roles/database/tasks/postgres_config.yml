@@ -33,14 +33,14 @@
 - name: create axlist database
   become_user: postgres
   community.general.postgresql_db:
-    name: axlist
+    name: "{{ axlistDBName }}"
 
 - name: create axlist user
   become_user: postgres
   community.general.postgresql_user:
-    db: axlist
-    name: axlist
-    password: "{{ axlistDBUserPassword }}"
+    db: "{{ axlistDBName }}"
+    name: "{{ axlistDBUsername }}"
+    password: "{{ axlistDBPassword }}"
     priv: "CONNECT/ALL"
     comment: This is the main axlist user
 
@@ -49,8 +49,8 @@
   community.general.postgresql_pg_hba:
     dest: /var/lib/pgsql/13/data/pg_hba.conf
     contype: host
-    users: axlist
+    users: "{{ axlistDBUsername }}"
     source: "{{ myIP }}/32"
-    databases: axlist
+    databases: "{{ axlistDBName }}"
     method: trust
   notify: restart postgres
