@@ -1,13 +1,13 @@
 axlist-deploy
 =============
 
-The repository of deployment resources for [axlist-app](https://github.com/davgra04/axlist-app). This repo uses the following for deployment:
+The repository of deployment resources for [axlist-app](https://github.com/davgra04/axlist-app), intended as a learning exercise for using Ansible. This repo uses the following for deployment:
 
 * Amazon Web Services
 * Terraform
 * Ansible
-* Docker
 
+![](./docs/axlist-aws-diagram.png)
 
 # Deploying
 
@@ -54,16 +54,19 @@ The repository of deployment resources for [axlist-app](https://github.com/davgr
    cd ansible/
    python3 -m venv ./env
    source env/bin/activate
+   pip install -r requirements.txt
    ```
 2. Install prerequisite Ansible modules
    ```bash
    ansible-galaxy collection install community.general
    ```
-3. (Optional) Ping instances to check connectivity
+3. Configure `[default]` AWS authentication credentials
+   * The aws_ec2 module relies on `~/.aws/credentials` and `~/.aws/config` to authenticate. [Read more on this configuration here](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration).
+4. (Optional) Ping instances to check connectivity
    ```bash
    ansible -i aws_ec2.yaml all -m ping
    ```
-4. Run main playbook
+5. Run main playbook
    ```bash
    ansible-playbook -i aws_ec2.yaml site.yml
    ```

@@ -128,7 +128,7 @@ resource "aws_security_group" "axlist-internal-sg" {
   description = "Internal security group for axlist"
   vpc_id      = aws_vpc.axlist-vpc.id
 
-  # DB access from my IP
+  # internal access among EC2 instances
   ingress {
     from_port   = 0
     to_port     = 0

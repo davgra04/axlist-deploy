@@ -3,6 +3,7 @@
 ################################################################################
 
 deployment*.tfvars
+ansible/axlist_dump
 
 ################################################################################
 # Created by https://www.toptal.com/developers/gitignore/api/terraform,ansible,python
